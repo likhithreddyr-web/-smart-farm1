@@ -2,12 +2,31 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
 // Top-level background message handler for FCM
+// This MUST be a top-level function (not a class method)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Firebase must be initialized in background isolate
+  await Firebase.initializeApp();
   debugPrint("Handling a background message: ${message.messageId}");
+
+  // Save the notification to Firestore so it shows in the notifications screen
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null && message.notification != null) {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('notifications')
+        .add({
+      'title': message.notification!.title ?? 'Alert',
+      'body': message.notification!.body ?? '',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+    debugPrint("Background notification saved to Firestore");
+  }
 }
 
 class PushNotificationService {
@@ -66,7 +85,7 @@ class PushNotificationService {
     // 4. Hook into background Firebase alerts correctly
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // 4. Hook into foreground execution logic
+    // 5. Hook into foreground execution logic
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('Got an FCM message whilst in the foreground!');
       if (message.notification != null) {
@@ -74,6 +93,21 @@ class PushNotificationService {
         saveNotificationToFirestore(message.notification!.title ?? 'Alert', message.notification!.body ?? '');
       }
     });
+
+    // 6. Handle notification taps when app was in background (not killed)
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      debugPrint('Notification tapped - app was in background');
+      if (message.notification != null) {
+        saveNotificationToFirestore(message.notification!.title ?? 'Alert', message.notification!.body ?? '');
+      }
+    });
+
+    // 7. Handle the case where app was killed and opened via notification tap
+    RemoteMessage? initialMessage = await _fcm.getInitialMessage();
+    if (initialMessage != null && initialMessage.notification != null) {
+      debugPrint('App opened from killed state via notification tap');
+      saveNotificationToFirestore(initialMessage.notification!.title ?? 'Alert', initialMessage.notification!.body ?? '');
+    }
 
     // 5. Extract and link FCM push token securely
     await _saveDeviceToken();
