@@ -6,7 +6,7 @@ admin.initializeApp();
 
 export const sendDailyAgriAlert = onSchedule(
   {
-    schedule: "0 19 * * *", // Runs every single day exactly at 7:00 PM (19:00)
+    schedule: "0 20 * * *", // Runs every single day at 8:00 PM (20:00)
     timeZone: "Asia/Kolkata",
     memory: "256MiB",
   },
