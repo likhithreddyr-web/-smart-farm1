@@ -2,8 +2,8 @@ name: Daily Agri Alert
 
 on:
   schedule:
-    # 17:30 IST = 12:00 UTC (IST is UTC+5:30)
-    - cron: '0 12 * * *'
+    # 19:00 IST = 13:30 UTC (IST is UTC+5:30)
+    - cron: '30 13 * * *'
   workflow_dispatch: # Allows manual triggering from GitHub UI
 
 jobs:
