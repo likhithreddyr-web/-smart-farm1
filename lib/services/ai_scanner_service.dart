@@ -1,24 +1,18 @@
-import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:smart_farm/services/translation_service.dart';
-
-class AiScannerService {
-  // Use your own API key, ideally loaded from secure config or environment.
-  static final String _apiKey = 'AIzaSyB_p3N-mqfWPXuv2N6jB0qZ5veCAMY_RFI';
-
-  late final GenerativeModel _model;
+import 'package:smart_farm/services/api_config.dart';
 
   AiScannerService() {
     _model = GenerativeModel(
       model: 'gemini-2.5-flash',
-      apiKey: _apiKey,
+      apiKey: ApiConfig.geminiApiKey,
     );
   }
 
   Future<String> analyzeLeaf(File imageFile) async {
-    if (_apiKey.isEmpty || _apiKey == 'YOUR_API_KEY') {
-      return 'AI API key is missing. Please add your API key in AiScannerService.';
+    if (ApiConfig.geminiApiKey.isEmpty) {
+      return 'AI API key is missing. Please add your API key in api_config.dart.';
     }
 
     try {
@@ -30,6 +24,7 @@ class AiScannerService {
       final prompt = TextPart(
         'Analyze this image of a plant leaf and explain whether it is healthy or has a disease/pest/nutrient issue. '
         'If there is an issue, name the likely cause and suggest simple treatment steps in clearly readable format. '
+        'DO NOT use any markdown formatting like ** or ###. '
         '$langInstruction',
       );
 
@@ -51,8 +46,8 @@ class AiScannerService {
   }
 
   Future<String> analyzeSoil(File imageFile, double temp, double humidity, double rain, String moistureLabel) async {
-    if (_apiKey.isEmpty || _apiKey == 'YOUR_API_KEY') {
-      return 'AI API key is missing. Please add your API key in AiScannerService.';
+    if (ApiConfig.geminiApiKey.isEmpty) {
+      return 'AI API key is missing. Please add your API key in api_config.dart.';
     }
 
     try {
@@ -65,6 +60,7 @@ class AiScannerService {
         'The live satellite volumetric water content model predicts the soil moisture is currently: $moistureLabel. '
         'Combining the satellite data and what you see in the photo (soil texture, color, cracking, organic matter visible), '
         'provide a short, highly personalized verdict and farming recommendation in 2 to 3 concise sentences. '
+        'DO NOT use any markdown formatting like ** or ###. '
         '$langInstruction'
       );
 

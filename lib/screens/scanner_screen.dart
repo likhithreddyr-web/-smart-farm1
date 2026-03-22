@@ -36,12 +36,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
       // Analyze with Gemini
       final result = await _aiService.analyzeLeaf(imageFile);
+      final cleanedResult = _cleanText(result);
 
       // Save to history (don't block UI waiting for Firestore)
-      _saveScanHistory(imageFile, result);
+      _saveScanHistory(imageFile, cleanedResult);
 
       if (mounted) {
-        _showResultDialog(result);
+        _showResultDialog(cleanedResult);
       }
     } catch (e) {
       if (mounted) {
@@ -103,6 +104,20 @@ class _ScannerScreenState extends State<ScannerScreen> {
         ],
       ),
     );
+    );
+  }
+
+  String _cleanText(String text) {
+    // Remove common markdown symbols
+    return text
+        .replaceAll(RegExp(r'\*\*'), '') // Remove bold
+        .replaceAll(RegExp(r'###'), '') // Remove headers
+        .replaceAll(RegExp(r'##'), '')  // Remove headers
+        .replaceAll(RegExp(r'#'), '')   // Remove headers
+        .replaceAll(RegExp(r'_'), '')   // Remove italics/underscore
+        .replaceAll(RegExp(r'~'), '')   // Remove strikethrough
+        .replaceAll(RegExp(r'\*'), '')  // Remove single asterisk
+        .trim();
   }
 
   @override

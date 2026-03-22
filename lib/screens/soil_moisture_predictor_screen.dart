@@ -181,7 +181,7 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
           );
           if (mounted) {
             setState(() {
-              _aiInsight = insight;
+              _aiInsight = _cleanText(insight);
               _isAiAnalyzing = false;
             });
           }
@@ -551,5 +551,18 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
         ),
       ),
     );
+  }
+
+  String _cleanText(String text) {
+    // Remove common markdown symbols
+    return text
+        .replaceAll(RegExp(r'\*\*'), '') // Remove bold
+        .replaceAll(RegExp(r'###'), '') // Remove headers
+        .replaceAll(RegExp(r'##'), '')  // Remove headers
+        .replaceAll(RegExp(r'#'), '')   // Remove headers
+        .replaceAll(RegExp(r'_'), '')   // Remove italics/underscore
+        .replaceAll(RegExp(r'~'), '')   // Remove strikethrough
+        .replaceAll(RegExp(r'\*'), '')  // Remove single asterisk
+        .trim();
   }
 }

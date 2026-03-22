@@ -55,3 +55,6 @@ functions/serviceAccountKey.json
 
 # Large JDK/SDK folders
 lib/oracleJdk-25/
+
+# Secure Config
+lib/services/api_config.dart

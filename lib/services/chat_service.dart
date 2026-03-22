@@ -1,15 +1,15 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter/foundation.dart';
+import 'package:smart_farm/services/api_config.dart';
 
 class ChatService {
-  static final String _apiKey = 'AIzaSyB_p3N-mqfWPXuv2N6jB0qZ5veCAMY_RFI';
   late final GenerativeModel _model;
   late ChatSession _chat;
 
   ChatService() {
     _model = GenerativeModel(
       model: 'gemini-2.5-flash',
-      apiKey: _apiKey,
+      apiKey: ApiConfig.geminiApiKey,
       systemInstruction: Content.system('''
 You are an intelligent, practical, and highly reliable AI assistant designed specifically for farmers. Your goal is to provide accurate, actionable, and easy-to-understand advice that helps farmers improve crop yield, reduce losses, and make better decisions.
 
@@ -43,6 +43,7 @@ IMPORTANT:
 - Ask follow-up questions when needed.
 - Keep answers useful for real farmers.
 - Always respond in the user's language.
+- NEVER use markdown formatting like ** or ###. Use plain text only.
 '''),
     );
     _chat = _model.startChat();

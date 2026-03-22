@@ -79,14 +79,28 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     _scrollToBottom();
 
     final response = await _chatService.sendMessage(text);
+    final cleanedResponse = _cleanText(response);
     
     if (mounted) {
       setState(() {
-        _messages.add(ChatMessage(text: response, isUser: false));
+        _messages.add(ChatMessage(text: cleanedResponse, isUser: false));
         _isLoading = false;
       });
       _scrollToBottom();
     }
+  }
+
+  String _cleanText(String text) {
+    // Remove common markdown symbols
+    return text
+        .replaceAll(RegExp(r'\*\*'), '') // Remove bold
+        .replaceAll(RegExp(r'###'), '') // Remove headers
+        .replaceAll(RegExp(r'##'), '')  // Remove headers
+        .replaceAll(RegExp(r'#'), '')   // Remove headers
+        .replaceAll(RegExp(r'_'), '')   // Remove italics/underscore
+        .replaceAll(RegExp(r'~'), '')   // Remove strikethrough
+        .replaceAll(RegExp(r'\*'), '')  // Remove single asterisk
+        .trim();
   }
 
   void _scrollToBottom() {
