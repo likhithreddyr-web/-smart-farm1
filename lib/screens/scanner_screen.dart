@@ -84,18 +84,21 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   void _showResultDialog(String result) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFF5F2EA),
-        title: Text(TranslationService.translate('analysis_result'), style: const TextStyle(color: Color(0xFF8B9467))),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text(TranslationService.translate('analysis_result'), 
+          style: TextStyle(color: isDark ? Theme.of(context).primaryColor : const Color(0xFF8B9467))),
         content: SingleChildScrollView(
-          child: Text(result, style: const TextStyle(color: Color(0xFF3D3D3D))),
+          child: Text(result, style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(TranslationService.translate('close'), style: const TextStyle(color: Color(0xFFD97757))),
+            child: Text(TranslationService.translate('close'), 
+              style: TextStyle(color: isDark ? Colors.redAccent : const Color(0xFFD97757))),
           ),
         ],
       ),
@@ -107,38 +110,45 @@ class _ScannerScreenState extends State<ScannerScreen> {
     return ValueListenableBuilder<String>(
       valueListenable: TranslationService.currentLanguage,
       builder: (context, lang, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final headerColor = isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF5F2EA);
+        final accentColor = isDark ? Theme.of(context).primaryColor : const Color(0xFF8B9467);
+        final textColor = Theme.of(context).textTheme.bodyLarge?.color;
+
         return SafeArea(
           child: Column(
         children: [
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF5F2EA),
+            decoration: BoxDecoration(
+              color: headerColor,
               border: Border(
                 bottom: BorderSide(
-                  color: Color(0x4DC9B6A3),
+                  color: isDark ? Colors.white10 : const Color(0x4DC9B6A3),
                 ),
               ),
             ),
-            child: Text(TranslationService.translate('point_at_leaf'), textAlign: TextAlign.center, style: const TextStyle(color: Color(0xCC3D3D3D), fontSize: 12, fontWeight: FontWeight.w500, letterSpacing: 1.2)),
+            child: Text(TranslationService.translate('point_at_leaf'), 
+              textAlign: TextAlign.center, 
+              style: TextStyle(color: isDark ? Colors.white60 : const Color(0xCC3D3D3D), fontSize: 12, fontWeight: FontWeight.w500, letterSpacing: 1.2)),
           ),
           Container(
             height: 64,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            color: const Color(0xFFF5F2EA),
+            color: headerColor,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.agriculture, color: Color(0xFF8B9467)),
+                    Icon(Icons.agriculture, color: accentColor),
                     const SizedBox(width: 12),
-                    Text(TranslationService.translate('ai_scanner'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF3D3D3D))),
+                    Text(TranslationService.translate('ai_scanner'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor)),
                   ],
                 ),
                 IconButton(
-                  icon: const Icon(Icons.history, color: Color(0xFF8B9467)),
+                  icon: Icon(Icons.history, color: accentColor),
                   onPressed: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanHistoryScreen()));
                   },
@@ -179,7 +189,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const FarmLoader(size: 60, color: Color(0xFF8B9467)),
+                          FarmLoader(size: 60, color: accentColor),
                           const SizedBox(height: 16),
                           Text(TranslationService.translate('analyzing_leaf'), style: const TextStyle(color: Colors.white, fontSize: 16)),
                         ],

@@ -36,7 +36,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F2EA), // Match login theme
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Dynamic background
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
@@ -68,18 +68,18 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                       Text(
                         title,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF3D3D3D),
+                          color: Theme.of(context).textTheme.headlineMedium?.color,
                         ),
                       ),
                       const SizedBox(height: 12),
                       Text(
                         subtitle,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.black54,
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                           fontSize: 16,
                           height: 1.4,
                         ),
@@ -105,16 +105,16 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                             duration: const Duration(milliseconds: 200),
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppTheme.primaryColor : Colors.white,
+                              color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isSelected ? AppTheme.primaryColor : Colors.grey.withOpacity(0.3),
+                                color: isSelected ? Theme.of(context).primaryColor : (isSelected ? Colors.transparent : (Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.grey.withOpacity(0.3))),
                                 width: 2,
                               ),
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: AppTheme.primaryColor.withOpacity(0.3),
+                                        color: Theme.of(context).primaryColor.withOpacity(0.3),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4),
                                       ),
@@ -129,13 +129,13 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                    color: isSelected ? Colors.white : Colors.black87,
+                                    color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
                                   ),
                                 ),
                                 if (isSelected)
                                   const Icon(Icons.check_circle, color: Colors.white, size: 24)
                                 else
-                                  const Icon(Icons.radio_button_unchecked, color: Colors.grey, size: 24),
+                                  Icon(Icons.radio_button_unchecked, color: Theme.of(context).iconTheme.color?.withOpacity(0.4), size: 24),
                               ],
                             ),
                           ),
@@ -158,7 +158,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                     child: ElevatedButton(
                       onPressed: _continue,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
+                        backgroundColor: Theme.of(context).primaryColor,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
                       ),

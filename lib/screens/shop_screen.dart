@@ -20,7 +20,7 @@ class _ShopScreenState extends State<ShopScreen> {
       valueListenable: TranslationService.currentLanguage,
       builder: (context, lang, child) {
         return Scaffold(
-          appBar: _buildAppBar(),
+          appBar: _buildAppBar(context),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -38,6 +38,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       Icons.grass,
                       const Color(0xFF1E3A2B),
                       () {},
+                      context,
                     ),
                     _buildCategoryCard(
                       TranslationService.translate('pesticides_booking'),
@@ -46,18 +47,21 @@ class _ShopScreenState extends State<ShopScreen> {
                       () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const PesticidesScreen()));
                       },
+                      context,
                     ),
                     _buildCategoryCard(
                       TranslationService.translate('fertilizers') ?? 'Fertilizers',
                       Icons.compost,
                       const Color(0xFF1E3A2B),
                       () {},
+                      context,
                     ),
                     _buildCategoryCard(
                       TranslationService.translate('equipment') ?? 'Equipment',
                       Icons.agriculture,
                       const Color(0xFF1E3A2B),
                       () {},
+                      context,
                     ),
                     _buildCategoryCard(
                       'Machinery Rental',
@@ -66,6 +70,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const MachineryScreen()));
                       },
+                      context,
                     ),
                   ],
                 ),
@@ -77,16 +82,16 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  Widget _buildCategoryCard(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildCategoryCard(String title, IconData icon, Color color, VoidCallback onTap, BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -98,10 +103,10 @@ class _ShopScreenState extends State<ShopScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: Theme.of(context).brightness == Brightness.dark ? Theme.of(context).primaryColor.withOpacity(0.15) : color.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 48, color: color),
+              child: Icon(icon, size: 48, color: Theme.of(context).brightness == Brightness.dark ? Theme.of(context).primaryColor : color),
             ),
             const SizedBox(height: 16),
             Padding(
@@ -109,10 +114,10 @@ class _ShopScreenState extends State<ShopScreen> {
               child: Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF3D3D3D),
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
             ),
@@ -122,21 +127,22 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  AppBar _buildAppBar() {
+  AppBar _buildAppBar(BuildContext context) {
+    final iconColor = Theme.of(context).iconTheme.color;
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       elevation: 0,
-      title: const Text('Krushi Angadi', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+      title: Text('Krushi Angadi', style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.bold)),
       actions: [
-        IconButton(icon: const Icon(Icons.search, color: Colors.black54), onPressed: () {}),
-        IconButton(icon: const Icon(Icons.notifications_none, color: Colors.black54), onPressed: () {
+        IconButton(icon: Icon(Icons.search, color: iconColor), onPressed: () {}),
+        IconButton(icon: Icon(Icons.notifications_none, color: iconColor), onPressed: () {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
         }),
         Stack(
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.shopping_cart_outlined, color: Colors.black54),
+              icon: Icon(Icons.shopping_cart_outlined, color: iconColor),
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
               },

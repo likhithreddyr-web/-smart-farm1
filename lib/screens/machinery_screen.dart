@@ -31,10 +31,13 @@ class MachineryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryGreen = isDark ? Theme.of(context).primaryColor : const Color(0xFF2E7D32);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF6FAF2),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32),
+        backgroundColor: primaryGreen,
         elevation: 0,
         foregroundColor: Colors.white,
         title: const Text('Farm Machinery Rental', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -45,9 +48,9 @@ class MachineryScreen extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-            decoration: const BoxDecoration(
-              color: Color(0xFF2E7D32),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: primaryGreen,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,14 +92,17 @@ class _MachineryCard extends StatelessWidget {
   final VoidCallback onBook;
 
   const _MachineryCard({required this.machine, required this.onCall, required this.onBook});
-
+  
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryGreen = isDark ? Theme.of(context).primaryColor : const Color(0xFF2E7D32);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.06), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -108,7 +114,7 @@ class _MachineryCard extends StatelessWidget {
               width: 68,
               height: 68,
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
+                color: isDark ? Colors.white10 : const Color(0xFFE8F5E9),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Center(child: Text(machine['icon']!, style: const TextStyle(fontSize: 36))),
@@ -118,17 +124,17 @@ class _MachineryCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(machine['name']!, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+                  Text(machine['name']!, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
                   const SizedBox(height: 4),
-                  Text(machine['desc']!, style: const TextStyle(fontSize: 13, color: Colors.black54, height: 1.4)),
+                  Text(machine['desc']!, style: TextStyle(fontSize: 13, color: Theme.of(context).textTheme.bodyMedium?.color, height: 1.4)),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF2E7D32),
-                            side: const BorderSide(color: Color(0xFF2E7D32)),
+                            foregroundColor: primaryGreen,
+                            side: BorderSide(color: primaryGreen),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(vertical: 8),
                           ),
@@ -141,7 +147,7 @@ class _MachineryCard extends StatelessWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2E7D32),
+                            backgroundColor: primaryGreen,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(vertical: 8),

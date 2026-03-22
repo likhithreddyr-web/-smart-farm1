@@ -62,7 +62,7 @@ class _OtpScreenState extends State<OtpScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -73,7 +73,7 @@ class _OtpScreenState extends State<OtpScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.mark_email_read, size: 64, color: AppTheme.primaryColor),
+              Icon(Icons.mark_email_read, size: 64, color: Theme.of(context).primaryColor),
               const SizedBox(height: 16),
               const Text(
                 'Verify Email',
@@ -84,7 +84,7 @@ class _OtpScreenState extends State<OtpScreen> {
               Text(
                 'We have sent a 4-digit code to\n${widget.email}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.black54, height: 1.4),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7), height: 1.4),
               ),
               const SizedBox(height: 40),
               TextField(
@@ -92,7 +92,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 keyboardType: TextInputType.number,
                 maxLength: 4,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color),
                 decoration: InputDecoration(
                   counterText: '',
                   hintText: '0000',
@@ -100,7 +100,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                    borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
                   ),
                 ),
                 onChanged: (val) {
@@ -115,7 +115,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 child: ElevatedButton(
                   onPressed: _isVerifying ? null : _verifyOtp,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: Theme.of(context).primaryColor,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
@@ -131,7 +131,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     const SnackBar(content: Text('A new OTP has been sent!')),
                   );
                 },
-                child: const Text('Resend Code', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                child: Text('Resend Code', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

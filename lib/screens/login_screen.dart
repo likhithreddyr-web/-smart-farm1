@@ -101,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F2EA), // earth-beige
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Dynamic background
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 48),
@@ -112,16 +112,16 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 24),
               Image.asset('assets/images/logo.png', width: 80, height: 80),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Krushi Mithra',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFF3D3D3D)),
+                style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.headlineMedium?.color),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Manage your farm with one tap.\nEnter your email to receive a login code.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54, fontSize: 16, height: 1.4),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7), fontSize: 16, height: 1.4),
               ),
               const SizedBox(height: 48),
               Form(
@@ -133,11 +133,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         labelText: 'Email Address',
-                        prefixIcon: const Icon(Icons.email, color: AppTheme.primaryColor),
+                        prefixIcon: Icon(Icons.email, color: Theme.of(context).primaryColor),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
                         ),
                       ),
                       textInputAction: TextInputAction.send,
@@ -159,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: ElevatedButton(
                         onPressed: _isSubmitting ? null : _sendOtp,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
+                          backgroundColor: Theme.of(context).primaryColor,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
@@ -172,12 +172,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('Already have an account?', style: TextStyle(color: Colors.black54)),
+                        Text('Already have an account?', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
                         TextButton(
                           onPressed: () {
                             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SignInScreen()));
                           },
-                          child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                          child: Text('Sign In', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                         ),
                       ],
                     ),

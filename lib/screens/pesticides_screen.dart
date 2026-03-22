@@ -105,13 +105,13 @@ class _PesticidesScreenState extends State<PesticidesScreen> {
       valueListenable: TranslationService.currentLanguage,
       builder: (context, lang, child) {
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: _buildAppBar(),
           body: Column(
             children: [
               Expanded(
                 child: _isLoading 
-                    ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B4332)))
+                    ? Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor))
                     : _buildProductGrid(),
               ),
             ],
@@ -122,22 +122,23 @@ class _PesticidesScreenState extends State<PesticidesScreen> {
   }
 
   AppBar _buildAppBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.black87),
+        icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
         onPressed: () {
           Navigator.pop(context);
         },
       ),
-      title: Text(TranslationService.translate('pesticides_booking'), style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+      title: Text(TranslationService.translate('pesticides_booking'), style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.bold)),
       actions: [
         Stack(
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.shopping_cart_outlined, color: Colors.black54),
+              icon: Icon(Icons.shopping_cart_outlined, color: Theme.of(context).iconTheme.color?.withOpacity(0.6)),
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
               },
@@ -153,7 +154,7 @@ class _PesticidesScreenState extends State<PesticidesScreen> {
                   
                   return Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: Color(0xFF1976D2), shape: BoxShape.circle),
+                    decoration: BoxDecoration(color: Theme.of(context).primaryColor, shape: BoxShape.circle),
                     child: Text('$totalItems', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                   );
                 },
@@ -184,18 +185,19 @@ class _PesticidesScreenState extends State<PesticidesScreen> {
   }
 
   Widget _buildProductCard(Product product) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => ProductDetailScreen(product: product)));
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          border: Border.all(color: isDark ? Colors.white10 : Colors.grey.withOpacity(0.2)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -214,32 +216,32 @@ class _PesticidesScreenState extends State<PesticidesScreen> {
                     child: Image.network(
                       product.image,
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, size: 50, color: Colors.black12),
+                      errorBuilder: (context, error, stackTrace) => Icon(Icons.image_not_supported, size: 50, color: isDark ? Colors.white12 : Colors.black12),
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   product.name,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Theme.of(context).textTheme.bodyLarge?.color),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${product.brand} • ${product.quantity}',
-                  style: const TextStyle(fontSize: 10, color: Colors.black54),
+                  style: TextStyle(fontSize: 10, color: isDark ? Colors.white60 : Colors.black54),
                 ),
                 Text(
                   product.category,
-                  style: const TextStyle(fontSize: 10, color: Colors.green),
+                  style: TextStyle(fontSize: 10, color: isDark ? Theme.of(context).primaryColor : Colors.green),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Text('₹${product.currentPrice.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text('₹${product.currentPrice.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Theme.of(context).textTheme.bodyLarge?.color)),
                     const SizedBox(width: 8),
-                    Text('₹${product.originalPrice.toInt()}', style: const TextStyle(color: Colors.grey, fontSize: 12, decoration: TextDecoration.lineThrough)),
+                    Text('₹${product.originalPrice.toInt()}', style: TextStyle(color: isDark ? Colors.white24 : Colors.grey, fontSize: 12, decoration: TextDecoration.lineThrough)),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -266,7 +268,7 @@ class _PesticidesScreenState extends State<PesticidesScreen> {
                       },
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: const Color(0xFF1B4332), borderRadius: BorderRadius.circular(4)), 
+                        decoration: BoxDecoration(color: Theme.of(context).primaryColor, borderRadius: BorderRadius.circular(4)), 
                         child: const Icon(Icons.add, size: 20, color: Colors.white),
                       ),
                     ),
@@ -300,11 +302,11 @@ class _PesticidesScreenState extends State<PesticidesScreen> {
                 children: [
                   Icon(
                     product.isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: product.isLiked ? Colors.red : Colors.grey,
+                    color: product.isLiked ? Colors.red : (isDark ? Colors.white24 : Colors.grey),
                     size: 16,
                   ),
                   const SizedBox(height: 2),
-                  Text('${product.isLiked ? product.likes + 1 : product.likes} Likes', style: const TextStyle(color: Colors.grey, fontSize: 8)),
+                  Text('${product.isLiked ? product.likes + 1 : product.likes} Likes', style: TextStyle(color: isDark ? Colors.white24 : Colors.grey, fontSize: 8)),
                 ],
               ),
             ),

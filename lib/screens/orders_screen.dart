@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_farm/widgets/farm_loader.dart';
+import 'package:smart_farm/services/translation_service.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -19,18 +20,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('My Orders')),
-        body: const Center(child: Text('Please log in to view your orders.')),
+        appBar: AppBar(title: Text(TranslationService.translate('my_orders'))),
+        body: Center(child: Text(TranslationService.translate('login_to_view_orders'))),
       );
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryGreen = isDark ? Theme.of(context).primaryColor : const Color(0xFF2E7D32);
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32),
+        backgroundColor: primaryGreen,
         foregroundColor: Colors.white,
-        title: const Text('My Orders', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(TranslationService.translate('my_orders'), style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
-      backgroundColor: const Color(0xFFF6FAF2),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('orders')
@@ -45,7 +49,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
           // Still loading and no cache yet — show spinner
           if (snapshot.connectionState == ConnectionState.waiting && _lastOrders.isEmpty) {
-            return const Center(child: FarmLoader(size: 60, color: Color(0xFF2E7D32)));
+            return Center(child: FarmLoader(size: 60, color: primaryGreen));
           }
 
           // Confirmed empty from Firestore (not just loading)
@@ -53,7 +57,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               snapshot.hasData &&
               snapshot.data!.docs.isEmpty &&
               _lastOrders.isEmpty) {
-            return const Center(child: Text('No orders found.'));
+            return Center(child: Text(TranslationService.translate('no_orders_found'), style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)));
           }
 
           // Use cached list so scroll never causes vanishing
@@ -66,26 +70,27 @@ class _OrdersScreenState extends State<OrdersScreen> {
             itemBuilder: (context, i) {
               final order = orders[i].data() as Map<String, dynamic>;
               return Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 2,
+                color: Theme.of(context).cardColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: isDark ? Colors.white10 : Colors.transparent)),
+                elevation: isDark ? 0 : 2,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Order #${orders[i].id}',
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text('${TranslationService.translate('order_hash')}${orders[i].id}',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
                       const SizedBox(height: 6),
-                      Text('Status: ${order['status'] ?? 'Unknown'}'),
-                      Text('Total: ₹${order['totalAmount'] ?? '--'}'),
+                      Text('${TranslationService.translate('status')} ${order['status'] ?? TranslationService.translate('unknown')}', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
+                      Text('${TranslationService.translate('total')} ₹${order['totalAmount'] ?? '--'}', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
                       Text(
-                          'Date: ${order['timestamp']?.toDate().toString().split(' ')[0] ?? '--'}'),
+                          '${TranslationService.translate('date')} ${order['timestamp']?.toDate().toString().split(' ')[0] ?? '--'}', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
                       const SizedBox(height: 8),
-                      const Text('Items:',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(TranslationService.translate('items'),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
                       ...List<Widget>.from(
                         (order['items'] as List?)?.map((item) => Text(
-                                '${item['productName']} x${item['quantity']} - ₹${item['total']}')) ??
+                                '${item['productName']} x${item['quantity']} - ₹${item['total']}', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color))) ??
                             [],
                       ),
                     ],

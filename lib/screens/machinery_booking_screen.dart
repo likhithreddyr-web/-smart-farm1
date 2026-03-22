@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_farm/widgets/farm_loader.dart';
+import 'package:smart_farm/services/translation_service.dart';
 
 class MachineryBookingScreen extends StatefulWidget {
   final String machineName;
@@ -34,7 +35,11 @@ class _MachineryBookingScreenState extends State<MachineryBookingScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 90)),
       builder: (context, child) => Theme(
-        data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF2E7D32))),
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
+            primary: Theme.of(context).primaryColor,
+          ),
+        ),
         child: child!,
       ),
     );
@@ -68,13 +73,16 @@ class _MachineryBookingScreenState extends State<MachineryBookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryGreen = isDark ? Theme.of(context).primaryColor : const Color(0xFF2E7D32);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF6FAF2),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32),
+        backgroundColor: primaryGreen,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: Text('Book ${widget.machineName}', style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('${TranslationService.translate('book')} ${widget.machineName}', style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -87,40 +95,40 @@ class _MachineryBookingScreenState extends State<MachineryBookingScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
+                  color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFE8F5E9),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFA5D6A7)),
+                  border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFA5D6A7)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.agriculture, color: Color(0xFF2E7D32)),
+                    Icon(Icons.agriculture, color: primaryGreen),
                     const SizedBox(width: 10),
-                    Text('Booking: ${widget.machineName}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B5E20), fontSize: 15)),
+                    Text('${TranslationService.translate('booking')}: ${widget.machineName}',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Theme.of(context).primaryColor : const Color(0xFF1B5E20), fontSize: 15)),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
-              const Text('Your Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(TranslationService.translate('your_details'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).textTheme.bodyLarge?.color)),
               const SizedBox(height: 12),
 
-              _buildFormCard([
-                _field(_nameController, 'Full Name', Icons.person, validator: (v) => v!.isEmpty ? 'Enter your name' : null),
+              _buildFormCard(context, [
+                _field(context, _nameController, TranslationService.translate('full_name'), Icons.person, validator: (v) => v!.isEmpty ? TranslationService.translate('enter_name') : null),
                 const SizedBox(height: 14),
-                _field(_phoneController, 'Mobile Number', Icons.phone,
+                _field(context, _phoneController, TranslationService.translate('mobile_number'), Icons.phone,
                     keyboard: TextInputType.phone,
-                    validator: (v) => v!.length < 10 ? 'Enter valid mobile number' : null),
+                    validator: (v) => v!.length < 10 ? TranslationService.translate('enter_valid_mobile') : null),
                 const SizedBox(height: 14),
-                _field(_addressController, 'Farm Address', Icons.location_on,
-                    maxLines: 3, validator: (v) => v!.isEmpty ? 'Enter your address' : null),
+                _field(context, _addressController, TranslationService.translate('farm_address'), Icons.location_on,
+                    maxLines: 3, validator: (v) => v!.isEmpty ? TranslationService.translate('enter_address') : null),
                 const SizedBox(height: 14),
-                _field(_hoursController, 'Number of Hours Required', Icons.timer,
+                _field(context, _hoursController, TranslationService.translate('hours_required'), Icons.timer,
                     keyboard: TextInputType.number,
-                    validator: (v) => v!.isEmpty ? 'Enter hours needed' : null),
+                    validator: (v) => v!.isEmpty ? TranslationService.translate('enter_hours') : null),
               ]),
 
               const SizedBox(height: 16),
-              const Text('Booking Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(TranslationService.translate('booking_date'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).textTheme.bodyLarge?.color)),
               const SizedBox(height: 12),
 
               GestureDetector(
@@ -128,23 +136,23 @@ class _MachineryBookingScreenState extends State<MachineryBookingScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _selectedDate == null ? Colors.grey.shade300 : const Color(0xFF2E7D32)),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+                    border: Border.all(color: _selectedDate == null ? (isDark ? Colors.white12 : Colors.grey.shade300) : primaryGreen),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.04), blurRadius: 8)],
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_month, color: Color(0xFF2E7D32)),
+                      Icon(Icons.calendar_month, color: primaryGreen),
                       const SizedBox(width: 12),
                       Text(
                         _selectedDate == null
-                            ? 'Tap to select date'
+                            ? TranslationService.translate('tap_select_date')
                             : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: _selectedDate != null ? FontWeight.bold : FontWeight.normal,
-                          color: _selectedDate != null ? Colors.black87 : Colors.black45,
+                          color: _selectedDate != null ? Theme.of(context).textTheme.bodyLarge?.color : Theme.of(context).textTheme.bodySmall?.color,
                         ),
                       ),
                       const Spacer(),
@@ -160,7 +168,7 @@ class _MachineryBookingScreenState extends State<MachineryBookingScreen> {
                 height: 52,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E7D32),
+                    backgroundColor: primaryGreen,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -169,7 +177,7 @@ class _MachineryBookingScreenState extends State<MachineryBookingScreen> {
                   icon: _isSubmitting
                       ? const SizedBox(width: 20, height: 20, child: FarmLoader.small())
                       : const Icon(Icons.check_circle_outline),
-                  label: const Text('Submit Booking', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  label: Text(TranslationService.translate('submit_booking'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 20),
@@ -180,35 +188,39 @@ class _MachineryBookingScreenState extends State<MachineryBookingScreen> {
     );
   }
 
-  Widget _buildFormCard(List<Widget> children) {
+  Widget _buildFormCard(BuildContext context, List<Widget> children) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.04), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
     );
   }
 
-  Widget _field(TextEditingController ctrl, String label, IconData icon,
+  Widget _field(BuildContext context, TextEditingController ctrl, String label, IconData icon,
       {TextInputType? keyboard, int maxLines = 1, String? Function(String?)? validator}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryGreen = isDark ? Theme.of(context).primaryColor : const Color(0xFF2E7D32);
     return TextFormField(
       controller: ctrl,
       keyboardType: keyboard,
       maxLines: maxLines,
       validator: validator,
+      style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: const Color(0xFF2E7D32), size: 20),
+        prefixIcon: Icon(icon, color: primaryGreen, size: 20),
         filled: true,
-        fillColor: const Color(0xFFF6FAF2),
+        fillColor: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6FAF2),
         contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 1.5),
+          borderSide: BorderSide(color: primaryGreen, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -231,11 +243,12 @@ class _BookingConfirmationScreen extends StatelessWidget {
     required this.userName,
     required this.date,
   });
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryGreen = isDark ? Theme.of(context).primaryColor : const Color(0xFF2E7D32);
     return Scaffold(
-      backgroundColor: const Color(0xFFF6FAF2),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -248,20 +261,20 @@ class _BookingConfirmationScreen extends StatelessWidget {
                   width: 110,
                   height: 110,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
+                    color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFE8F5E9),
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF2E7D32), width: 3),
+                    border: Border.all(color: primaryGreen, width: 3),
                   ),
-                  child: const Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 70),
+                  child: Icon(Icons.check_circle, color: primaryGreen, size: 70),
                 ),
                 const SizedBox(height: 28),
-                const Text('Booking Confirmed!',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20))),
+                Text(TranslationService.translate('booking_confirmed'),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primaryGreen)),
                 const SizedBox(height: 12),
-                const Text(
-                  'Machinery booked successfully.\nIt will reach your farm soon.',
+                Text(
+                  TranslationService.translate('machine_booked_success'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15, color: Colors.black54, height: 1.5),
+                  style: TextStyle(fontSize: 15, color: Theme.of(context).textTheme.bodyMedium?.color, height: 1.5),
                 ),
                 const SizedBox(height: 24),
                 // Booking summary card
@@ -269,17 +282,17 @@ class _BookingConfirmationScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.05), blurRadius: 10)],
                   ),
                   child: Column(
                     children: [
-                      _row(Icons.agriculture, 'Machine', machineName),
+                      _row(context, Icons.agriculture, TranslationService.translate('machine'), machineName),
                       const Divider(height: 20),
-                      _row(Icons.person, 'Name', userName),
+                      _row(context, Icons.person, TranslationService.translate('name'), userName),
                       const Divider(height: 20),
-                      _row(Icons.calendar_today, 'Date', '${date.day}/${date.month}/${date.year}'),
+                      _row(context, Icons.calendar_today, TranslationService.translate('date'), '${date.day}/${date.month}/${date.year}'),
                     ],
                   ),
                 ),
@@ -288,18 +301,18 @@ class _BookingConfirmationScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF8E1),
+                    color: isDark ? Colors.amber.withOpacity(0.05) : const Color(0xFFFFF8E1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFFCC02)),
+                    border: Border.all(color: isDark ? Colors.amber.withOpacity(0.2) : const Color(0xFFFFCC02)),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.notifications_active, color: Color(0xFFF57F17)),
-                      SizedBox(width: 10),
+                      Icon(Icons.notifications_active, color: isDark ? Colors.amber : const Color(0xFFF57F17)),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'SMS Sent: "Your machinery booking is confirmed and is on the way."',
-                          style: TextStyle(fontSize: 12, color: Color(0xFF795548)),
+                          TranslationService.translate('sms_sent'),
+                          style: TextStyle(fontSize: 12, color: isDark ? Colors.amber.withOpacity(0.8) : const Color(0xFF795548)),
                         ),
                       ),
                     ],
@@ -311,13 +324,13 @@ class _BookingConfirmationScreen extends StatelessWidget {
                   height: 50,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E7D32),
+                      backgroundColor: primaryGreen,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 0,
                     ),
                     onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
-                    child: const Text('Back to Shop', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: Text(TranslationService.translate('back_to_shop'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -328,14 +341,16 @@ class _BookingConfirmationScreen extends StatelessWidget {
     );
   }
 
-  Widget _row(IconData icon, String label, String value) {
+  Widget _row(BuildContext context, IconData icon, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryGreen = isDark ? Theme.of(context).primaryColor : const Color(0xFF2E7D32);
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFF2E7D32), size: 18),
+        Icon(icon, color: primaryGreen, size: 18),
         const SizedBox(width: 10),
-        Text('$label:', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+        Text('$label:', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 13)),
         const SizedBox(width: 8),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Theme.of(context).textTheme.bodyLarge?.color)),
       ],
     );
   }

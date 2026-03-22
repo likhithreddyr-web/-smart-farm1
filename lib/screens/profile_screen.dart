@@ -7,7 +7,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smart_farm/screens/notifications_screen.dart';
 import 'package:smart_farm/screens/login_screen.dart';
 import 'package:smart_farm/screens/orders_screen.dart';
+import 'package:smart_farm/screens/locate_farm_screen.dart';
 import 'package:smart_farm/widgets/farm_loader.dart';
+import 'package:provider/provider.dart';
+import 'package:smart_farm/services/theme_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -114,12 +117,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Scaffold(backgroundColor: Color(0xFFF6FAF2), body: Center(child: FarmLoader(size: 80, color: Color(0xFF2E7D32))));
+    final themeService = Provider.of<ThemeService>(context);
+    final isDark = themeService.isDarkMode;
+    final primaryColor = Theme.of(context).primaryColor;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color;
+
+    if (_isLoading) return Scaffold(backgroundColor: Theme.of(context).scaffoldBackgroundColor, body: Center(child: FarmLoader(size: 80, color: Theme.of(context).primaryColor)));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6FAF2),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32),
+        backgroundColor: primaryColor,
         elevation: 0,
         title: const Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
@@ -135,9 +144,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
-            decoration: const BoxDecoration(
-              color: Color(0xFF2E7D32),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+            decoration: BoxDecoration(
+              color: primaryColor,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
             ),
             child: Column(
               children: [
@@ -145,7 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   alignment: Alignment.bottomRight,
                   children: [
                     GestureDetector(
-                      onTap: _pickAvatar,
+                      onTap: _isEditing ? _pickAvatar : null,
                       child: CircleAvatar(
                         radius: 50,
                         backgroundColor: Colors.white,
@@ -157,14 +166,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ? MemoryImage(base64Decode(_profileImageUrl.substring(7))) as ImageProvider
                                     : FileImage(File(_profileImageUrl)) as ImageProvider),
                         child: _profileImageUrl.isEmpty
-                            ? const Icon(Icons.person, size: 48, color: Color(0xFF2E7D32))
+                            ? Icon(Icons.person, size: 48, color: Theme.of(context).primaryColor)
                             : null,
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                      child: const Icon(Icons.camera_alt, size: 14, color: Color(0xFF2E7D32)),
                     ),
                   ],
                 ),
@@ -191,21 +195,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: surfaceColor,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4))],
                     ),
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        _buildField(Icons.person, 'Name', _nameController, _isEditing),
+                        _buildField(Icons.person, 'Name', _nameController, _isEditing, textColor),
                         const Divider(height: 24),
-                        _buildField(Icons.location_on, 'Address / Location', _locationController, _isEditing),
+                        _buildField(Icons.location_on, 'Address / Location', _locationController, _isEditing, textColor),
                         const Divider(height: 24),
-                        _buildField(Icons.grass, 'Major Crops', _cropsController, _isEditing),
+                        _buildField(Icons.grass, 'Major Crops', _cropsController, _isEditing, textColor),
                         const Divider(height: 24),
-                        _buildField(Icons.phone, 'Phone', _phoneController, _isEditing),
+                        _buildField(Icons.phone, 'Phone', _phoneController, _isEditing, textColor),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Theme Toggle
+                  Container(
+                    decoration: BoxDecoration(
+                      color: surfaceColor,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4))],
+                    ),
+                    child: SwitchListTile(
+                      title: Text('Dark Mode', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                      subtitle: Text('Reduce eye strain in low light', style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.titleSmall?.color)),
+                      secondary: Icon(isDark ? Icons.dark_mode : Icons.light_mode, color: primaryColor),
+                      value: isDark,
+                      activeColor: primaryColor,
+                      onChanged: (val) {
+                        themeService.setThemeMode(val ? ThemeMode.dark : ThemeMode.light);
+                      },
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -215,7 +240,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 50,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2E7D32),
+                        backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         elevation: 0,
@@ -264,7 +289,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 50,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2E7D32),
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LocateFarmScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.map),
+                      label: const Text('Locate My Farm', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -288,23 +334,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildField(IconData icon, String label, TextEditingController controller, bool editing) {
+  Widget _buildField(IconData icon, String label, TextEditingController controller, bool editing, Color? textColor) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFF2E7D32), size: 20),
+        Icon(icon, color: Theme.of(context).primaryColor, size: 20),
         const SizedBox(width: 12),
         Expanded(
           child: editing
               ? TextField(
                   controller: controller,
-                  style: const TextStyle(fontSize: 15),
+                  style: TextStyle(fontSize: 15, color: textColor),
                   decoration: InputDecoration(
                     labelText: label,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 6),
                     border: InputBorder.none,
-                    focusedBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: Color(0xFF2E7D32))),
+                    focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Theme.of(context).primaryColor)),
                   ),
                 )
               : Column(
@@ -317,7 +363,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: controller.text.isEmpty ? Colors.grey : Colors.black87),
+                          color: controller.text.isEmpty ? Colors.grey : textColor),
                     ),
                   ],
                 ),

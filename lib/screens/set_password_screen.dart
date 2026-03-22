@@ -79,12 +79,12 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F2EA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -95,18 +95,18 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.lock_person, size: 64, color: AppTheme.primaryColor),
+              Icon(Icons.lock_person, size: 64, color: Theme.of(context).primaryColor),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Secure Your Account',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.headlineMedium?.color),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Your email has been verified. Please set a strong password to continue.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54, height: 1.4, fontSize: 16),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7), height: 1.4, fontSize: 16),
               ),
               const SizedBox(height: 48),
               Form(
@@ -118,7 +118,7 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         labelText: 'New Password',
-                        prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+                        prefixIcon: Icon(Icons.lock_outline, color: Theme.of(context).primaryColor),
                         suffixIcon: IconButton(
                           icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
                           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -126,7 +126,7 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
                         ),
                       ),
                       textInputAction: TextInputAction.next,
@@ -143,7 +143,7 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                       obscureText: _obscureConfirm,
                       decoration: InputDecoration(
                         labelText: 'Confirm Password',
-                        prefixIcon: const Icon(Icons.lock_reset, color: AppTheme.primaryColor),
+                        prefixIcon: Icon(Icons.lock_reset, color: Theme.of(context).primaryColor),
                         suffixIcon: IconButton(
                           icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
                           onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
@@ -151,7 +151,7 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
                         ),
                       ),
                       textInputAction: TextInputAction.done,
@@ -170,7 +170,7 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                       child: ElevatedButton(
                         onPressed: _isSubmitting ? null : _submit,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
+                          backgroundColor: Theme.of(context).primaryColor,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),

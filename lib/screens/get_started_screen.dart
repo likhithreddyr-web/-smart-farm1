@@ -108,7 +108,7 @@ class GetStartedScreen extends StatelessWidget {
                           width: double.infinity,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1B4D2E),
+                              backgroundColor: Theme.of(context).primaryColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -158,15 +158,15 @@ class GetStartedScreen extends StatelessWidget {
                 // Footer
                 Container(
                   width: double.infinity,
-                  color: const Color(0xFFF6FAF2), // Light greenish-white background
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6FAF2), // Dynamic background
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
+                      Text(
                         'Krushi Mithra',
                         style: TextStyle(
-                          color: Color(0xFF1B4D2E),
+                          color: Theme.of(context).primaryColor,
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
                         ),
@@ -175,29 +175,29 @@ class GetStartedScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('Privacy Policy', style: TextStyle(color: Colors.black54, fontSize: 11)),
+                          Text('Privacy Policy', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 11)),
                           const SizedBox(width: 20),
-                          const Text('Terms of Service', style: TextStyle(color: Colors.black54, fontSize: 11)),
+                          Text('Terms of Service', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 11)),
                           const SizedBox(width: 20),
                           GestureDetector(
                             onTap: () => _showHelpCenterDialog(context),
-                            child: const Text(
+                            child: Text(
                               'Help Center', 
                               style: TextStyle(
-                                color: Color(0xFF1B4D2E), 
+                                color: Theme.of(context).primaryColor, 
                                 fontSize: 11, 
                                 fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.underline,
-                                decorationColor: Color(0xFF1B4D2E),
+                                decorationColor: Theme.of(context).primaryColor,
                               ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
-                      const Text(
+                      Text(
                         '© 2026 The Digital Agronomist. All rights reserved.',
-                        style: TextStyle(color: Colors.black38, fontSize: 10),
+                        style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 10),
                       ),
                     ],
                   ),
@@ -241,9 +241,9 @@ class GetStartedScreen extends StatelessWidget {
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text(
+          title: Text(
             'Help Center Contacts', 
-            style: TextStyle(color: Color(0xFF1B4D2E), fontWeight: FontWeight.bold),
+            style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -255,13 +255,13 @@ class GetStartedScreen extends StatelessWidget {
               const SizedBox(height: 16),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const CircleAvatar(
+                leading: CircleAvatar(
                   radius: 24,
-                  backgroundImage: AssetImage('assets/images/bharath.png'),
-                  backgroundColor: Color(0xFFE2F0D9),
+                  backgroundImage: const AssetImage('assets/images/bharath.png'),
+                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
                 ),
-                title: const Text('Bharath BS', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Founder\n+91 8956235626'),
+                title: Text('Bharath BS', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
+                subtitle: Text('Founder\n+91 8956235626', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
                 onTap: () {},
               ),
             ],
@@ -269,7 +269,7 @@ class GetStartedScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close', style: TextStyle(color: Color(0xFF1B4D2E), fontWeight: FontWeight.bold)),
+              child: Text('Close', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
             ),
           ],
         );

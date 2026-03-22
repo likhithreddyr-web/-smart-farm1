@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_farm/widgets/farm_loader.dart';
+import 'package:smart_farm/services/translation_service.dart';
 
 class ScanHistoryScreen extends StatelessWidget {
   const ScanHistoryScreen({super.key});
@@ -15,20 +16,25 @@ class ScanHistoryScreen extends StatelessWidget {
     if (user == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Scan History'),
-          backgroundColor: const Color(0xFFF5F2EA),
+          title: Text(TranslationService.translate('scan_history')),
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+          elevation: 0,
+          titleTextStyle: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        body: const Center(child: Text('Please log in to see history.')),
+        body: Center(child: Text(TranslationService.translate('login_to_see_history'), style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color))),
       );
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = isDark ? Theme.of(context).primaryColor : const Color(0xFF8B9467);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F2EA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Scan History', style: TextStyle(color: Color(0xFF3D3D3D), fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFFF5F2EA),
+        title: Text(TranslationService.translate('scan_history'), style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.bold)),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF8B9467)),
+        iconTheme: IconThemeData(color: accentColor),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -39,7 +45,7 @@ class ScanHistoryScreen extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: FarmLoader(size: 60, color: Color(0xFF8B9467)));
+            return Center(child: FarmLoader(size: 60, color: accentColor));
           }
 
           if (snapshot.hasError) {
@@ -47,10 +53,10 @@ class ScanHistoryScreen extends StatelessWidget {
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                'No scans yet. Start scanning your plants!',
-                style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 16),
+                TranslationService.translate('no_scans_yet'),
+                style: TextStyle(color: isDark ? Colors.white60 : const Color(0xFF9E9E9E), fontSize: 16),
               ),
             );
           }
@@ -71,7 +77,7 @@ class ScanHistoryScreen extends StatelessWidget {
                 : 'Unknown Date';
 
               return Card(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 elevation: 2,
                 margin: const EdgeInsets.only(bottom: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -83,11 +89,11 @@ class ScanHistoryScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.history, color: Color(0xFF8B9467)),
+                          Icon(Icons.history, color: accentColor),
                           Text(
                             dateStr,
-                            style: const TextStyle(
-                              color: Color(0xFF757575),
+                            style: TextStyle(
+                              color: isDark ? Colors.white60 : const Color(0xFF757575),
                               fontSize: 12,
                             ),
                           ),
@@ -108,8 +114,8 @@ class ScanHistoryScreen extends StatelessWidget {
                          const SizedBox(height: 12),
                       Text(
                         result,
-                        style: const TextStyle(
-                          color: Color(0xFF3D3D3D),
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                           fontSize: 14,
                         ),
                       ),

@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:smart_farm/widgets/farm_loader.dart';
+import 'package:smart_farm/services/translation_service.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:smart_farm/services/ai_scanner_service.dart';
 
 class SoilMoisturePredictorScreen extends StatefulWidget {
   const SoilMoisturePredictorScreen({super.key});
@@ -22,9 +27,11 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
   final List<String> _soilTypes = ['Loamy', 'Clay', 'Sandy', 'Silty', 'Peaty', 'Saline'];
   
   bool _isLoading = false;
+  bool _isAiAnalyzing = false;
   String _predictedLabel = '';
   double _predictedPercent = 0.0;
   String _recommendation = '';
+  String _aiInsight = '';
 
   @override
   void dispose() {
@@ -61,79 +68,158 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
     }
   }
 
-  void _simulatePrediction() {
-    if (_isLoading) return;
+  Future<Position?> _getPosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
 
-    final temp = double.tryParse(_temperatureController.text) ?? 28;
-    final humidity = double.tryParse(_humidityController.text) ?? 55;
-    final rainfall = double.tryParse(_rainfallController.text) ?? 5;
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location services are disabled.')));
+      return null;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are denied.')));
+        return null;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are permanently denied.')));
+      return null;
+    }
+
+    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+  }
+
+  Future<void> _fetchRealMoisture() async {
+    if (_isLoading) return;
 
     setState(() {
       _isLoading = true;
       _predictedLabel = '';
       _recommendation = '';
+      _aiInsight = '';
     });
 
-    Future.delayed(const Duration(milliseconds: 700), () {
-      double score = humidity * 0.45 + rainfall * 0.35 - temp * 0.25;
-      score += _soilType == 'Clay' ? 6 : _soilType == 'Sandy' ? -5 : 0;
-      score = score.clamp(8, 95);
-
-      final pct = score.toInt();
-      String label;
-      String rec;
-      Color color;
-
-      if (pct < 40) {
-        label = 'Low';
-        rec = 'Irrigation needed. Add water and mulch to retain moisture.';
-        color = Colors.red.shade600;
-      } else if (pct < 70) {
-        label = 'Medium';
-        rec = 'Maintain current condition. Continue regular monitoring.';
-        color = Colors.orange.shade700;
-      } else {
-        label = 'High';
-        rec = 'Avoid watering now and let soil drain to prevent waterlogging.';
-        color = Colors.green.shade700;
+    try {
+      final position = await _getPosition();
+      if (position == null) {
+        setState(() => _isLoading = false);
+        return;
       }
 
       setState(() {
-        _predictedPercent = pct.toDouble();
-        _predictedLabel = label;
-        _recommendation = rec;
-        _isLoading = false;
+        _locationController.text = '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Soil moisture estimated as $label (${pct}%).'),
-          backgroundColor: color,
-          duration: const Duration(seconds: 2),
-        ),
+      // Open-Meteo free API for live soil moisture, temp, and humidity
+      final url = Uri.parse(
+        'https://api.open-meteo.com/v1/forecast?latitude=${position.latitude}&longitude=${position.longitude}&current=temperature_2m,relative_humidity_2m,precipitation,soil_moisture_0_to_7cm'
       );
-    });
+
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final current = data['current'];
+
+        final temp = current['temperature_2m']?.toDouble() ?? 0.0;
+        final humidity = current['relative_humidity_2m']?.toDouble() ?? 0.0;
+        final rain = current['precipitation']?.toDouble() ?? 0.0;
+        
+        // Volumetric Water Content (m³/m³) 0.0 to approx 0.50 max
+        final soilMoistureVWC = current['soil_moisture_0_to_7cm']?.toDouble() ?? 0.2;
+
+        _temperatureController.text = temp.toString();
+        _humidityController.text = humidity.toString();
+        _rainfallController.text = rain.toString();
+
+        // Convert VWC to a practical 0-100% moisture reading
+        // 0.5 VWC is basically waterlogged. Let's cap at 0.5 for 100%
+        double pct = (soilMoistureVWC / 0.5) * 100;
+        
+        // Slight modifiers for soil type (e.g. sand drains faster, clay holds more)
+        pct += _soilType == 'Clay' ? 5 : _soilType == 'Sandy' ? -5 : 0;
+        pct = pct.clamp(0, 100);
+
+        String label;
+        String rec;
+        Color color;
+
+        if (pct < 30) {
+          label = 'Low';
+          rec = 'Critical! Immediate irrigation needed. Soil is very dry.';
+          color = Colors.red.shade600;
+        } else if (pct < 60) {
+          label = 'Moderate';
+          rec = 'Healthy moisture. Standard watering schedule recommended.';
+          color = Colors.orange.shade700;
+        } else {
+          label = 'High';
+          rec = 'Avoid watering. Soil is well-hydrated and risks waterlogging.';
+          color = Colors.green.shade700;
+        }
+
+        setState(() {
+          _predictedPercent = pct;
+          _predictedLabel = label;
+          _recommendation = rec;
+          _isLoading = false;
+        });
+
+        if (_pickedImage != null) {
+          setState(() => _isAiAnalyzing = true);
+          final insight = await AiScannerService().analyzeSoil(
+            File(_pickedImage!.path),
+            temp,
+            humidity,
+            rain,
+            label,
+          );
+          if (mounted) {
+            setState(() {
+              _aiInsight = insight;
+              _isAiAnalyzing = false;
+            });
+          }
+        }
+
+      } else {
+        throw Exception('Failed to fetch weather data.');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+      setState(() => _isLoading = false);
+    }
   }
 
-  Widget _buildInputField({required String label, required TextEditingController controller, String suffixText = ''}) {
+  Widget _buildInputField({required String label, required TextEditingController controller, String suffixText = '', required BuildContext context}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF2F2F2F))),
+        Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Theme.of(context).textTheme.bodyLarge?.color)),
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE0E0E0)),
+            border: Border.all(color: isDark ? Colors.white12 : const Color(0xFFE0E0E0)),
           ),
           child: TextField(
             controller: controller,
             keyboardType: TextInputType.number,
+            style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
             decoration: InputDecoration(
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               suffixText: suffixText,
+              suffixStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
             ),
           ),
         ),
@@ -143,11 +229,17 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color;
+    final borderColor = isDark ? Colors.white12 : const Color(0xFFE0E0E0);
+    final hintColor = isDark ? Colors.white54 : const Color(0xFF5D5D5D);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Soil Moisture Predictor'),
-        backgroundColor: const Color(0xFF2E7D32),
+        title: Text(TranslationService.translate('soil_moisture_predictor')),
+        backgroundColor: Theme.of(context).primaryColor,
         elevation: 0,
       ),
       body: SafeArea(
@@ -160,9 +252,9 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFECF5E9),
+                  color: isDark ? Theme.of(context).primaryColor.withOpacity(0.15) : const Color(0xFFECF5E9),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFDDE8DA)),
+                  border: Border.all(color: isDark ? Colors.transparent : const Color(0xFFDDE8DA)),
                 ),
                 child: Row(
                   children: [
@@ -178,10 +270,10 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Check your soil condition instantly', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          SizedBox(height: 4),
-                          Text('Enter data and get quick moisture status with recommendations.', style: TextStyle(fontSize: 13, color: Color(0xFF5D5D5D))),
+                        children: [
+                          Text(TranslationService.translate('check_soil_condition'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
+                          const SizedBox(height: 4),
+                          Text(TranslationService.translate('enter_data_moisture'), style: TextStyle(fontSize: 13, color: hintColor)),
                         ],
                       ),
                     )
@@ -190,15 +282,15 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
               ),
               const SizedBox(height: 18),
 
-              Text('Input Data', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(TranslationService.translate('input_data'), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
 
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: surfaceColor,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                  border: Border.all(color: borderColor),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -212,11 +304,11 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
                           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.photo_camera, color: Color(0xFF406527)),
-                              SizedBox(width: 10),
-                              Expanded(child: Text('Upload / Capture Soil Image', style: TextStyle(fontWeight: FontWeight.w600))),
-                              Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFF707070)),
+                            children: [
+                              const Icon(Icons.photo_camera, color: Color(0xFF406527)),
+                              const SizedBox(width: 10),
+                              Expanded(child: Text(TranslationService.translate('upload_capture_soil'), style: TextStyle(fontWeight: FontWeight.w600, color: textColor))),
+                              const Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFF707070)),
                             ],
                           ),
                         ),
@@ -236,8 +328,8 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
                       Container(
                         height: 120,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                        child: const Center(
-                          child: Text('No image selected yet. Use Upload to add a soil sample image.', style: TextStyle(color: Color(0xFF5A5A5A))),
+                        child: Center(
+                          child: Text(TranslationService.translate('no_image_selected'), style: TextStyle(color: hintColor)),
                         ),
                       ),
                   ],
@@ -247,9 +339,9 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: surfaceColor,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                  border: Border.all(color: borderColor),
                 ),
                 padding: const EdgeInsets.all(12),
                 child: Row(
@@ -259,24 +351,30 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
                     Expanded(
                       child: TextField(
                         controller: _locationController,
-                        decoration: const InputDecoration(
-                          hintText: 'Enter location (e.g., Bengaluru)',
+                        readOnly: true,
+                        style: TextStyle(color: textColor),
+                        decoration: InputDecoration(
+                          hintText: TranslationService.translate('enter_location'),
+                          hintStyle: TextStyle(color: hintColor),
                           border: InputBorder.none,
                         ),
                       ),
                     ),
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF3F7A2F),
-                        side: const BorderSide(color: Color(0xFF3F7A2F)),
+                        foregroundColor: Theme.of(context).primaryColor,
+                        side: BorderSide(color: Theme.of(context).primaryColor),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _locationController.text = 'Bengaluru, KA';
-                        });
+                      onPressed: () async {
+                        final pos = await _getPosition();
+                        if (pos != null) {
+                          setState(() {
+                            _locationController.text = '${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)}';
+                          });
+                        }
                       },
-                      child: const Text('Auto-detect'),
+                      child: Text(TranslationService.translate('auto_detect')),
                     ),
                   ],
                 ),
@@ -285,35 +383,36 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _buildInputField(label: 'Temperature (°C)', controller: _temperatureController, suffixText: '°C')),
+                  Expanded(child: _buildInputField(label: TranslationService.translate('temperature_c'), controller: _temperatureController, suffixText: '°C', context: context)),
                   const SizedBox(width: 10),
-                  Expanded(child: _buildInputField(label: 'Humidity (%)', controller: _humidityController, suffixText: '%')),
+                  Expanded(child: _buildInputField(label: TranslationService.translate('humidity_pct'), controller: _humidityController, suffixText: '%', context: context)),
                 ],
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Expanded(child: _buildInputField(label: 'Rainfall (mm)', controller: _rainfallController, suffixText: 'mm')),
+                  Expanded(child: _buildInputField(label: TranslationService.translate('rainfall_mm'), controller: _rainfallController, suffixText: 'mm', context: context)),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Soil Type', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF2F2F2F))),
+                        Text(TranslationService.translate('soil_type'), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: textColor)),
                         const SizedBox(height: 6),
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: surfaceColor,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE0E0E0)),
+                            border: Border.all(color: borderColor),
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: DropdownButton<String>(
                             value: _soilType,
+                            dropdownColor: surfaceColor,
                             borderRadius: BorderRadius.circular(12),
                             isExpanded: true,
                             underline: const SizedBox.shrink(),
-                            items: _soilTypes.map((soil) => DropdownMenuItem(value: soil, child: Text(soil))).toList(),
+                            items: _soilTypes.map((soil) => DropdownMenuItem(value: soil, child: Text(soil, style: TextStyle(color: textColor)))).toList(),
                             onChanged: (value) {
                               if (value != null) {
                                 setState(() {
@@ -334,42 +433,42 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
-                  icon: _isLoading ? const SizedBox(width: 20, height: 20, child: FarmLoader.small()) : const Icon(Icons.water_drop, color: Colors.white),
-                  label: Text(_isLoading ? 'Checking...' : 'Check Moisture', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  icon: _isLoading ? const SizedBox(width: 20, height: 20, child: FarmLoader.small()) : const Icon(Icons.satellite_alt, color: Colors.white),
+                  label: Text(_isLoading ? TranslationService.translate('checking') : 'Live Satellite Moisture Check', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E7D32),
+                    backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: _isLoading ? null : _simulatePrediction,
+                  onPressed: _isLoading ? null : _fetchRealMoisture,
                 ),
               ),
 
               const SizedBox(height: 20),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: surfaceColor,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFD8DECE)),
+                  border: Border.all(color: borderColor),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 4)),
+                    BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.03), blurRadius: 8, offset: const Offset(0, 4)),
                   ],
                 ),
                 padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Result', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(TranslationService.translate('result'), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
                     const SizedBox(height: 8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Icon(Icons.thermostat, color: Color(0xFF3A6A2F)),
                         const SizedBox(width: 8),
-                        const Expanded(child: Text('Soil Moisture Level', style: TextStyle(fontWeight: FontWeight.w600))),
+                        Expanded(child: Text(TranslationService.translate('soil_moisture_level'), style: const TextStyle(fontWeight: FontWeight.w600))),
                         const SizedBox(width: 8),
                         Chip(
-                          label: Text(_predictedLabel.isEmpty ? 'Unknown' : _predictedLabel, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                          label: Text(_predictedLabel.isEmpty ? TranslationService.translate('unknown') : (TranslationService.translate(_predictedLabel.toLowerCase()) ?? _predictedLabel), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                           backgroundColor: _predictedLabel == 'High'
                               ? Colors.green.shade600
                               : _predictedLabel == 'Medium'
@@ -382,20 +481,47 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      _predictedLabel.isEmpty ? 'No prediction yet' : 'Estimated Moisture: ${_predictedPercent.toStringAsFixed(0)}%',
-                      style: const TextStyle(fontSize: 14, color: Color(0xFF2D2D2D)),
+                      _predictedLabel.isEmpty ? TranslationService.translate('no_prediction_yet') : '${TranslationService.translate('estimated_moisture')}: ${_predictedPercent.toStringAsFixed(0)}%',
+                      style: TextStyle(fontSize: 14, color: textColor),
                     ),
                     const SizedBox(height: 10),
-                    const Divider(height: 1, color: Color(0xFFE8E8E8)),
+                    Divider(height: 1, color: borderColor),
                     const SizedBox(height: 10),
-                    const Text('Recommendation', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    Text(TranslationService.translate('recommendation'), style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor)),
                     const SizedBox(height: 8),
                     Text(
                       _recommendation.isEmpty
-                          ? 'Use the button above to compute soil moisture and get simple advice.'
+                          ? TranslationService.translate('use_button_advice')
                           : _recommendation,
-                      style: const TextStyle(fontSize: 14, color: Color(0xFF424242)),
+                      style: TextStyle(fontSize: 14, color: hintColor),
                     ),
+                    
+                    if (_isAiAnalyzing || _aiInsight.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Divider(height: 1, color: borderColor),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.auto_awesome, color: Theme.of(context).primaryColor, size: 18),
+                          const SizedBox(width: 6),
+                          Text(TranslationService.translate('ai_insight') ?? 'AI Visual Analysis', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (_isAiAnalyzing)
+                        const Row(
+                          children: [
+                            SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                            SizedBox(width: 8),
+                            Text('Analyzing soil image...', style: TextStyle(fontSize: 13, color: Colors.grey, fontStyle: FontStyle.italic)),
+                          ],
+                        )
+                      else
+                        Text(
+                          _aiInsight,
+                          style: TextStyle(fontSize: 14, color: hintColor),
+                        ),
+                    ],
                   ],
                 ),
               ),
@@ -403,17 +529,17 @@ class _SoilMoisturePredictorScreenState extends State<SoilMoisturePredictorScree
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFDFF0D7),
+                  color: isDark ? Theme.of(context).primaryColor.withOpacity(0.15) : const Color(0xFFDFF0D7),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
-                  children: const [
-                    Icon(Icons.info_outline, color: Color(0xFF2B5325)),
-                    SizedBox(width: 8),
+                  children: [
+                    Icon(Icons.info_outline, color: isDark ? Theme.of(context).primaryColor : const Color(0xFF2B5325)),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Tip: For more accurate results, enter current field values and use the soil image preview as reference.',
-                        style: TextStyle(color: Color(0xFF2F4F31), fontWeight: FontWeight.w500),
+                        TranslationService.translate('tip_accurate_results'),
+                        style: TextStyle(color: isDark ? Theme.of(context).primaryColor : const Color(0xFF2F4F31), fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],

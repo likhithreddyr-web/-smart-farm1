@@ -66,12 +66,12 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F2EA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -82,18 +82,18 @@ class _SignInScreenState extends State<SignInScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.account_circle, size: 80, color: AppTheme.primaryColor),
+              Icon(Icons.account_circle, size: 80, color: Theme.of(context).primaryColor),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Welcome Back',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF3D3D3D)),
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.headlineMedium?.color),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Log in with your existing account',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54, fontSize: 16),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7), fontSize: 16),
               ),
               const SizedBox(height: 48),
               Form(
@@ -105,11 +105,11 @@ class _SignInScreenState extends State<SignInScreen> {
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         labelText: 'Email Address',
-                        prefixIcon: const Icon(Icons.email, color: AppTheme.primaryColor),
+                        prefixIcon: Icon(Icons.email, color: Theme.of(context).primaryColor),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
                         ),
                       ),
                       textInputAction: TextInputAction.next,
@@ -125,7 +125,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock, color: AppTheme.primaryColor),
+                        prefixIcon: Icon(Icons.lock, color: Theme.of(context).primaryColor),
                         suffixIcon: IconButton(
                           icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
                           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -133,7 +133,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
                         ),
                       ),
                       textInputAction: TextInputAction.done,
@@ -150,7 +150,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       child: ElevatedButton(
                         onPressed: _isSubmitting ? null : _signIn,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
+                          backgroundColor: Theme.of(context).primaryColor,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),

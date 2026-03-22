@@ -13,8 +13,16 @@ async function broadcastAlert() {
   try {
     console.log("⏳ Fetching live agricultural news from Economic Times...");
     const API_URL = "https://api.rss2json.com/v1/api.json?rss_url=https://economictimes.indiatimes.com/news/economy/agriculture/rssfeeds/21468427.cms";
-    const response = await axios.get(API_URL);
-    const items = response.data.items;
+    
+    let items = [];
+    try {
+      const response = await axios.get(API_URL);
+      if (response.data && response.data.items) {
+        items = response.data.items;
+      }
+    } catch (apiError) {
+      console.error("⚠️ Failed to fetch live news, proceeding to fallback:", apiError.message);
+    }
 
     const FALLBACK_SCHEMES = [
       {

@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:smart_farm/screens/get_started_screen.dart';
 import 'package:smart_farm/screens/home_screen.dart';
-import 'package:smart_farm/screens/login_screen.dart';
+
 import 'package:smart_farm/screens/profile_screen.dart';
 import 'package:smart_farm/screens/shop_screen.dart';
 import 'package:smart_farm/screens/weather_screen.dart';
@@ -13,6 +13,7 @@ import 'package:smart_farm/screens/soil_moisture_predictor_screen.dart';
 import 'package:smart_farm/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_farm/services/theme_service.dart';
+import 'package:smart_farm/services/weather_service.dart';
 import 'package:smart_farm/theme/app_theme.dart';
 import 'package:smart_farm/widgets/farm_loader.dart';
 import 'package:smart_farm/services/push_notification_service.dart';
@@ -35,8 +36,11 @@ void main() async {
   await PushNotificationService().initialize();
   
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeService(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeService()),
+        ChangeNotifierProvider(create: (_) => WeatherService()),
+      ],
       child: const SmartFarmApp(),
     ),
   );
@@ -51,10 +55,9 @@ class SmartFarmApp extends StatelessWidget {
     return MaterialApp(
       title: 'Krushi Mithra',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeService.themeMode,
       builder: (context, child) {
         // Globally reduce text scale so fonts fit smaller screens well
         return MediaQuery(
@@ -125,55 +128,76 @@ class _MainScreenState extends State<MainScreen> {
     return ValueListenableBuilder<String>(
       valueListenable: TranslationService.currentLanguage,
       builder: (context, lang, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Scaffold(
           body: IndexedStack(
             index: _selectedIndex,
             children: List.generate(6, (index) => _buildTab(index)),
           ),
-          bottomNavigationBar: Container(
-            height: 80,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF5F2EA),
-              border: Border(
-                top: BorderSide(
-                  color: Color(0x33C9B6A3),
-                ),
-              ),
+      bottomNavigationBar: Container(
+        height: 80,
+        decoration: BoxDecoration(
+          color: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF5F2EA),
+          border: Border(
+            top: BorderSide(
+              color: isDark ? Colors.white12 : const Color(0x33C9B6A3),
             ),
-            child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          ),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            _NavBarItem(
-              icon: Icons.home,
-              label: TranslationService.translate('home'),
-              isSelected: _selectedIndex == 0,
-              onTap: () => setState(() => _selectedIndex = 0),
-            ),
-            _NavBarItem(
-              icon: Icons.wb_sunny,
-              label: TranslationService.translate('weather'),
-              isSelected: _selectedIndex == 1,
-              onTap: () => setState(() => _selectedIndex = 1),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _NavBarItem(
+                        icon: Icons.home,
+                        label: TranslationService.translate('home'),
+                        isSelected: _selectedIndex == 0,
+                        onTap: () => setState(() => _selectedIndex = 0),
+                      ),
+                      _NavBarItem(
+                        icon: Icons.wb_sunny,
+                        label: TranslationService.translate('weather'),
+                        isSelected: _selectedIndex == 1,
+                        onTap: () => setState(() => _selectedIndex = 1),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 80),
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _NavBarItem(
+                        icon: Icons.shower,
+                        label: 'Predict',
+                        isSelected: _selectedIndex == 3,
+                        onTap: () => setState(() => _selectedIndex = 3),
+                      ),
+                      _NavBarItem(
+                        icon: Icons.storefront,
+                        label: TranslationService.translate('shop'),
+                        isSelected: _selectedIndex == 4,
+                        onTap: () => setState(() => _selectedIndex = 4),
+                      ),
+                      _NavBarItem(
+                        icon: Icons.person,
+                        label: TranslationService.translate('profile'),
+                        isSelected: _selectedIndex == 5,
+                        onTap: () => setState(() => _selectedIndex = 5),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             _NavBarScanItem(onTap: () => setState(() => _selectedIndex = 2)),
-            _NavBarItem(
-              icon: Icons.shower,
-              label: 'Predict',
-              isSelected: _selectedIndex == 3,
-              onTap: () => setState(() => _selectedIndex = 3),
-            ),
-            _NavBarItem(
-              icon: Icons.storefront,
-              label: TranslationService.translate('shop'),
-              isSelected: _selectedIndex == 4,
-              onTap: () => setState(() => _selectedIndex = 4),
-            ),
-            _NavBarItem(
-              icon: Icons.person,
-              label: TranslationService.translate('profile'),
-              isSelected: _selectedIndex == 5,
-              onTap: () => setState(() => _selectedIndex = 5),
-            ),
           ],
         ),
       ),
@@ -200,26 +224,35 @@ class _NavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? const Color(0xFF8B9467) : const Color(0x993D3D3D),
-            size: 24,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? const Color(0xFF8B9467) : (isDark ? Colors.white60 : const Color(0x993D3D3D)),
+                size: 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? const Color(0xFF8B9467) : (isDark ? Colors.white60 : const Color(0x993D3D3D)),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              color: isSelected ? const Color(0xFF8B9467) : const Color(0x993D3D3D),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -232,33 +265,38 @@ class _NavBarScanItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0x338B9467), // earth-olive/20
-              borderRadius: BorderRadius.circular(20),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0x338B9467), // earth-olive/20
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.center_focus_strong,
+                color: Color(0xFF8B9467),
+                size: 24,
+              ),
             ),
-            child: const Icon(
-              Icons.center_focus_strong,
-              color: Color(0xFF8B9467),
-              size: 24,
+            const SizedBox(height: 4),
+            Text(
+              TranslationService.translate('scan') ?? 'Scan',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF8B9467),
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            TranslationService.translate('scan'),
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF8B9467),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

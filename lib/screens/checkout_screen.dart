@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_farm/services/cart_service.dart';
 import 'package:smart_farm/widgets/farm_loader.dart';
+import 'package:smart_farm/services/translation_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -37,7 +38,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     
     if (CartService.instance.items.isEmpty) {
        ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your cart is empty.')),
+        SnackBar(content: Text(TranslationService.translate('cart_is_empty'))),
       );
       return;
     }
@@ -97,7 +98,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error placing order: $e')),
+          SnackBar(content: Text('${TranslationService.translate('error_placing_order')} $e')),
         );
       }
     } finally {
@@ -112,21 +113,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void _showSuccessDialog() {
     CartService.instance.clearCart();
     
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Column(
+        backgroundColor: Theme.of(context).cardColor,
+        title: Column(
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 60),
-            SizedBox(height: 16),
-            Text('Order Successful!', style: TextStyle(color: Color(0xFF1B4332))),
+            const Icon(Icons.check_circle, color: Colors.green, size: 60),
+            const SizedBox(height: 16),
+            Text(TranslationService.translate('order_successful'), 
+              style: TextStyle(color: isDark ? Theme.of(context).primaryColor : const Color(0xFF1B4332))),
           ],
         ),
-        content: const Text(
-          'Your order has been placed successfully and will be delivered soon.',
+        content: Text(
+          TranslationService.translate('order_success_msg'),
           textAlign: TextAlign.center,
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
         ),
         actions: [
           SizedBox(
@@ -139,10 +143,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1B4332),
+                backgroundColor: isDark ? Theme.of(context).primaryColor : const Color(0xFF1B4332),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Back to Shop'),
+              child: Text(TranslationService.translate('back_to_shop')),
             ),
           ),
         ],
@@ -195,16 +199,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Checkout', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: Text(TranslationService.translate('checkout'), style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.bold)),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(color: Theme.of(context).iconTheme.color),
       ),
       body: _isProcessing
-          ? const Center(child: FarmLoader(size: 70, color: Color(0xFF1B4332)))
+          ? Center(child: FarmLoader(size: 70, color: Theme.of(context).primaryColor))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Form(
@@ -212,20 +217,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Delivery Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    Text(TranslationService.translate('delivery_information'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.titleLarge?.color)),
                     const SizedBox(height: 16),
                     
                     // Name Field
                     TextFormField(
                       controller: _nameController,
                       decoration: InputDecoration(
-                        labelText: 'Full Name',
+                        labelText: TranslationService.translate('full_name'),
                         prefixIcon: const Icon(Icons.person_outline),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
                       ),
-                      validator: (value) => value == null || value.isEmpty ? 'Please enter your name' : null,
+                      validator: (value) => value == null || value.isEmpty ? TranslationService.translate('enter_name') : null,
                     ),
                     const SizedBox(height: 16),
                     
@@ -234,11 +239,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
-                        labelText: 'Email Address',
+                        labelText: TranslationService.translate('email_address'),
                         prefixIcon: const Icon(Icons.email_outlined),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) return 'Please enter your email address';
@@ -253,13 +258,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
                       decoration: InputDecoration(
-                        labelText: 'Phone Number',
+                        labelText: TranslationService.translate('mobile_number'),
                         prefixIcon: const Icon(Icons.phone_outlined),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
                       ),
-                      validator: (value) => value == null || value.isEmpty ? 'Please enter your phone number' : null,
+                      validator: (value) => value == null || value.isEmpty ? TranslationService.translate('enter_valid_mobile') : null,
                     ),
                     const SizedBox(height: 16),
                     
@@ -268,7 +273,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       controller: _addressController,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        labelText: 'Full Delivery Address',
+                        labelText: TranslationService.translate('full_delivery_address'),
                         alignLabelWithHint: true,
                         prefixIcon: const Padding(
                           padding: EdgeInsets.only(bottom: 30),
@@ -276,21 +281,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
                       ),
-                      validator: (value) => value == null || value.isEmpty ? 'Please enter your delivery address' : null,
+                      validator: (value) => value == null || value.isEmpty ? TranslationService.translate('enter_address') : null,
                     ),
                     
                     const SizedBox(height: 32),
-                    const Text('Payment Method', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    Text(TranslationService.translate('payment_method'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.titleLarge?.color)),
                     const SizedBox(height: 16),
                     
                     // Payment Method Options
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.withOpacity(0.3)),
                       ),
                       child: Column(
                         children: [
@@ -298,18 +303,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             value: 'Cash on Delivery',
                             groupValue: _selectedPaymentMethod,
                             onChanged: (val) => setState(() => _selectedPaymentMethod = val.toString()),
-                            title: const Text('Cash on Delivery'),
+                            title: Text(TranslationService.translate('cash_on_delivery')),
                             secondary: const Icon(Icons.money, color: Colors.green),
-                            activeColor: const Color(0xFF1B4332),
+                            activeColor: isDark ? Theme.of(context).primaryColor : const Color(0xFF1B4332),
                           ),
                           const Divider(height: 1),
                           RadioListTile(
                             value: 'Credit/Debit Card',
                             groupValue: _selectedPaymentMethod,
                             onChanged: (val) => setState(() => _selectedPaymentMethod = val.toString()),
-                            title: const Text('Credit/Debit Card'),
+                            title: Text(TranslationService.translate('credit_debit_card')),
                             secondary: const Icon(Icons.credit_card, color: Colors.blue),
-                            activeColor: const Color(0xFF1B4332),
+                            activeColor: isDark ? Theme.of(context).primaryColor : const Color(0xFF1B4332),
                           ),
                         ],
                       ),
@@ -317,19 +322,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     
                     const SizedBox(height: 32),
                     // Order Summary
-                     Container(
+                    Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F8F6), // Very light green
+                        color: isDark ? Theme.of(context).primaryColor.withOpacity(0.1) : const Color(0xFFF1F8F6), // Very light green
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Total Amount:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54)),
+                          Text(TranslationService.translate('total_amount'), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white60 : Colors.black54)),
                           Text(
                             '₹${CartService.instance.totalPrice.toStringAsFixed(2)}',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1B4332)),
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Theme.of(context).primaryColor : const Color(0xFF1B4332)),
                           ),
                         ],
                       ),
@@ -347,7 +352,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           elevation: 2,
                         ),
-                        child: const Text('Place Order', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+                        child: Text(TranslationService.translate('place_order'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
                       ),
                     ),
                     const SizedBox(height: 20),

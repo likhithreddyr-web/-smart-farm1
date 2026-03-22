@@ -11,25 +11,31 @@ class RentScreen extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: TranslationService.currentLanguage,
       builder: (context, lang, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final primaryGreen = isDark ? Theme.of(context).primaryColor : const Color(0xFF2E7D32);
+
         return Scaffold(
-          backgroundColor: const Color(0xFFF5F5F5),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
+            backgroundColor: primaryGreen,
+            elevation: 0,
+            foregroundColor: Colors.white,
             title: Row(
               children: [
                 Image.asset('assets/images/logo.png', width: 28, height: 28),
                 const SizedBox(width: 8),
-                const Text('Krushi Mithra', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                const Text('Krushi Mithra', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
               ],
             ),
             actions: [
               Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.white.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.notifications, color: Colors.black87, size: 20),
+                  icon: const Icon(Icons.notifications, color: Colors.white, size: 20),
                   onPressed: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
                   },
@@ -46,7 +52,7 @@ class RentScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
+                    color: Theme.of(context).primaryColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -61,9 +67,9 @@ class RentScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Text(TranslationService.translate('all_equipment'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  child: Text(TranslationService.translate('all_equipment'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).textTheme.bodyLarge?.color)),
                 ),
-                _buildFilters(),
+                _buildFilters(context),
                 const SizedBox(height: 20),
                 _buildMachineryCard(
                   context,
@@ -99,33 +105,35 @@ class RentScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFilters() {
+  Widget _buildFilters(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _buildCategoryChip(TranslationService.translate('all_equipment'), true),
+          _buildCategoryChip(context, TranslationService.translate('all_equipment'), true),
           const SizedBox(width: 12),
-          _buildCategoryChip(TranslationService.translate('tractors'), false),
+          _buildCategoryChip(context, TranslationService.translate('tractors'), false),
           const SizedBox(width: 24),
-          _buildCategoryChip(TranslationService.translate('tillage'), false),
+          _buildCategoryChip(context, TranslationService.translate('tillage'), false),
         ],
       ),
     );
   }
 
-  Widget _buildCategoryChip(String label, bool isSelected) {
+  Widget _buildCategoryChip(BuildContext context, String label, bool isSelected) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryGreen = isDark ? Theme.of(context).primaryColor : const Color(0xFF2E7D32);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+        color: isSelected ? primaryGreen : Colors.transparent,
         borderRadius: BorderRadius.circular(20),
         border: isSelected ? null : Border.all(color: Colors.grey.withOpacity(0.4)),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: isSelected ? Colors.white : Colors.black54,
+          color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black54),
           fontWeight: FontWeight.bold,
           fontSize: 13,
         ),
@@ -145,9 +153,11 @@ class RentScreen extends StatelessWidget {
     required String spec2Label,
     required String spec2Value,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryGreen = isDark ? Theme.of(context).primaryColor : const Color(0xFF2E7D32);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -175,12 +185,12 @@ class RentScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? Colors.black.withOpacity(0.5) : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.star, color: AppTheme.primaryColor, size: 14),
+                      Icon(Icons.star, color: primaryGreen, size: 14),
                       const SizedBox(width: 4),
                       Text(rating, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
@@ -197,10 +207,10 @@ class RentScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    Text(name, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
                     Text(
                       price,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppTheme.primaryColor),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: primaryGreen),
                     ),
                   ],
                 ),
@@ -210,12 +220,12 @@ class RentScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.location_on, color: Colors.black54, size: 14),
+                        Icon(Icons.location_on, color: Theme.of(context).textTheme.bodySmall?.color, size: 14),
                         const SizedBox(width: 4),
-                        Text(distance, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                        Text(distance, style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color)),
                       ],
                     ),
-                    Text(TranslationService.translate('per_hour'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54)),
+                    Text(TranslationService.translate('per_hour'), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodySmall?.color)),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -225,15 +235,15 @@ class RentScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF3F6F3),
+                          color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F6F3),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(spec1Label, style: const TextStyle(fontSize: 10, color: Colors.black54)),
+                            Text(spec1Label, style: TextStyle(fontSize: 10, color: Theme.of(context).textTheme.bodySmall?.color)),
                             const SizedBox(height: 4),
-                            Text(spec1Value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+                            Text(spec1Value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
                           ],
                         ),
                       ),
@@ -243,15 +253,15 @@ class RentScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF3F6F3),
+                          color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F6F3),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(spec2Label, style: const TextStyle(fontSize: 10, color: Colors.black54)),
+                            Text(spec2Label, style: TextStyle(fontSize: 10, color: Theme.of(context).textTheme.bodySmall?.color)),
                             const SizedBox(height: 4),
-                            Text(spec2Value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+                            Text(spec2Value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
                           ],
                         ),
                       ),
@@ -263,7 +273,7 @@ class RentScreen extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
+                      backgroundColor: primaryGreen,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       elevation: 0,
@@ -281,7 +291,7 @@ class RentScreen extends StatelessWidget {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF3F6F3),
+                      backgroundColor: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F6F3),
                       side: BorderSide.none,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -291,8 +301,8 @@ class RentScreen extends StatelessWidget {
                         const SnackBar(content: Text('Call feature coming soon!')),
                       );
                     },
-                    icon: const Icon(Icons.call, color: Colors.black87, size: 18),
-                    label: const Text('Call Owner', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16)),
+                    icon: Icon(Icons.call, color: Theme.of(context).iconTheme.color, size: 18),
+                    label: Text('Call Owner', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               ],

@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 /// Use [FarmLoader.small] inside buttons (white, compact).
 class FarmLoader extends StatefulWidget {
   final double size;
-  final Color color;
+  final Color? color;
 
-  const FarmLoader({super.key, this.size = 60, this.color = const Color(0xFF2E7D32)});
+  const FarmLoader({super.key, this.size = 60, this.color});
 
   /// Small version for use inside buttons (white, 20px)
   const FarmLoader.small({super.key})
@@ -82,7 +82,7 @@ class _FarmLoaderState extends State<FarmLoader> with SingleTickerProviderStateM
               ),
             ),
             const SizedBox(height: 10),
-            _DotRow(color: widget.color),
+            _DotRow(color: widget.color ?? Theme.of(context).primaryColor),
           ],
         );
       },

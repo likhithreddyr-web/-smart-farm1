@@ -16,21 +16,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? Theme.of(context).primaryColor : const Color(0xFF4C53A5);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF0F0F5),
+        backgroundColor: isDark ? Theme.of(context).colorScheme.surface : const Color(0xFFF0F0F5),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF4C53A5)),
+          icon: Icon(Icons.arrow_back, color: primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Product', style: TextStyle(color: Color(0xFF4C53A5), fontWeight: FontWeight.bold)),
+        title: Text('Product', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: Icon(
-              widget.product.isLiked ? Icons.favorite : Icons.favorite, // Heart icon reference is always seemingly red if liked? Wait, let's keep it simple.
-              color: widget.product.isLiked ? Colors.red : const Color(0xFFF44336),
+              widget.product.isLiked ? Icons.favorite : Icons.favorite,
+              color: widget.product.isLiked ? Colors.red : (isDark ? Colors.white24 : const Color(0xFFF44336)),
             ),
             onPressed: () {
               setState(() {
@@ -43,10 +46,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
               offset: const Offset(0, -4),
               blurRadius: 10,
             ),
@@ -58,7 +61,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             children: [
               Text(
                 '₹${(widget.product.currentPrice * quantity).toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF4C53A5)),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primaryColor),
               ),
               ElevatedButton.icon(
                 onPressed: () {
@@ -71,7 +74,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4C53A5),
+                  backgroundColor: primaryColor,
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
@@ -90,9 +93,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             Container(
               height: 350,
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF0F0F5),
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF0F0F5),
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(50),
                   bottomRight: Radius.circular(50),
                 ),
@@ -102,7 +105,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   widget.product.image,
                   height: 250,
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, size: 100, color: Colors.black12),
+                  errorBuilder: (context, error, stackTrace) => Icon(Icons.image_not_supported, size: 100, color: isDark ? Colors.white12 : Colors.black12),
                 ),
               ),
             ),
@@ -114,7 +117,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 children: [
                   Text(
                     widget.product.name,
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF4C53A5)),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primaryColor),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -123,23 +126,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Row(
                         children: List.generate(5, (index) {
                           return Icon(
-                            index <= 3 ? Icons.favorite : Icons.favorite,
-                            color: index <= 3 ? const Color(0xFF4C53A5) : Colors.grey.shade400,
+                            index <= 3 ? Icons.star : Icons.star,
+                            color: index <= 3 ? primaryColor : (isDark ? Colors.white12 : Colors.grey.shade400),
                             size: 18,
                           );
                         }),
                       ),
                       Row(
                         children: [
-                          _buildQtyBtn(Icons.remove, () {
+                          _buildQtyBtn(context, Icons.remove, () {
                             if (quantity > 1) {
                               setState(() => quantity--);
                             }
                           }),
                           const SizedBox(width: 12),
-                          Text(quantity.toString().padLeft(2, '0'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4C53A5))),
+                          Text(quantity.toString().padLeft(2, '0'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor)),
                           const SizedBox(width: 12),
-                          _buildQtyBtn(Icons.add, () {
+                          _buildQtyBtn(context, Icons.add, () {
                             setState(() => quantity++);
                           }),
                         ],
@@ -149,32 +152,32 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   const SizedBox(height: 24),
                   Text(
                     widget.product.description.isEmpty ? 'This is a more detailed description of the product. you can write here more about the product. this is lengthy description.' : widget.product.description,
-                    style: const TextStyle(fontSize: 14, color: Colors.black54, height: 1.5),
+                    style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color, height: 1.5),
                   ),
                   const SizedBox(height: 24),
                   
                   // Sizes / Attributes
                   Row(
                     children: [
-                      const Text('Brand: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4C53A5))),
+                      Text('Brand: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor)),
                       const SizedBox(width: 12),
-                      _buildChip(widget.product.brand),
+                      _buildChip(context, widget.product.brand),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Text('Crops: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4C53A5))),
+                      Text('Crops: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor)),
                       const SizedBox(width: 12),
-                      _buildChip(widget.product.suitableCrops),
+                      _buildChip(context, widget.product.suitableCrops),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Text('Size: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4C53A5))),
+                      Text('Size: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor)),
                       const SizedBox(width: 22),
-                      _buildChip(widget.product.quantity),
+                      _buildChip(context, widget.product.quantity),
                     ],
                   ),
                 ],
@@ -186,35 +189,38 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildQtyBtn(IconData icon, VoidCallback onTap) {
+  Widget _buildQtyBtn(BuildContext context, IconData icon, VoidCallback onTap) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? Theme.of(context).primaryColor : const Color(0xFF4C53A5);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2)),
+            BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 4, offset: const Offset(0, 2)),
           ]
         ),
-        child: Icon(icon, size: 20, color: const Color(0xFF4C53A5)),
+        child: Icon(icon, size: 20, color: primaryColor),
       ),
     );
   }
 
-  Widget _buildChip(String label) {
+  Widget _buildChip(BuildContext context, String label) {
     if (label.isEmpty) label = 'N/A';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.05), blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+      child: Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
     );
   }
 }

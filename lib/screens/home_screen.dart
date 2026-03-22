@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_farm/screens/scanner_screen.dart';
 import 'package:smart_farm/screens/sell_screen.dart';
 import 'package:smart_farm/screens/rent_screen.dart';
@@ -8,7 +9,9 @@ import 'package:smart_farm/screens/profile_screen.dart';
 import 'package:smart_farm/screens/soil_moisture_predictor_screen.dart';
 import 'package:smart_farm/screens/notifications_screen.dart';
 import 'package:smart_farm/services/translation_service.dart';
+import 'package:smart_farm/services/weather_service.dart';
 import 'package:smart_farm/theme/app_theme.dart';
+import 'package:smart_farm/screens/chatbot_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -18,6 +21,7 @@ class HomeScreen extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: TranslationService.currentLanguage,
       builder: (context, lang, child) {
+        final weatherSvc = context.watch<WeatherService>();
         return Scaffold(
           appBar: AppBar(
             leading: Padding(
@@ -28,6 +32,17 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             title: Text(TranslationService.translate('home') ?? 'AgriGrow'),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.notifications_outlined, color: Theme.of(context).iconTheme.color),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                  );
+                },
+              ),
+            ],
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -36,20 +51,36 @@ class HomeScreen extends StatelessWidget {
               children: [
                 _buildSearchBar(context),
                 const SizedBox(height: 20),
-                _buildWeatherCard(),
+                _buildWeatherCard(weatherSvc, context),
                 const SizedBox(height: 20),
-                _buildScanCard(),
+                _buildScanCard(context),
                 const SizedBox(height: 20),
                 _buildFunctionGrid(context),
               ],
             ),
+          ),
+          floatingActionButton: FloatingActionButton(
+            backgroundColor: Theme.of(context).primaryColor,
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatbotScreen()));
+            },
+            child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
           ),
         );
       },
     );
   }
 
-  Widget _buildWeatherCard() {
+  Widget _buildWeatherCard(WeatherService svc, BuildContext context) {
+    final w = svc.weatherData;
+    final temp = w != null ? '${w.temperature.round()}°C' : '--°C';
+    final condition = w?.condition ?? 'Loading...';
+    final humidity = w != null ? '${w.humidity.round()}%' : '--';
+    final wind = w != null ? '${w.windSpeed.round()} km/h' : '--';
+    final rain = w != null ? '${w.rainfall.toStringAsFixed(1)} mm' : '--';
+    final icon = w != null ? WeatherService.codeToIcon(w.weatherCode) : Icons.wb_sunny;
+    final iconColor = w != null ? WeatherService.iconColorForCode(w.weatherCode) : Theme.of(context).primaryColor;
+
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -60,19 +91,19 @@ class HomeScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('28°C', style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: Color(0xFF2F5232))),
-                const Icon(Icons.cloud, color: Color(0xFF2F5232), size: 44),
+                Text(temp, style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: iconColor)),
+                Icon(icon, color: iconColor, size: 44),
               ],
             ),
             const SizedBox(height: 4),
-            Text(TranslationService.translate('sunny_clear'), style: const TextStyle(fontSize: 15, color: Colors.black87)),
+            Text(condition, style: TextStyle(fontSize: 15, color: Theme.of(context).textTheme.bodyMedium?.color)),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _weatherMetric('Humidity', '65%', Icons.water_drop),
-                _weatherMetric('Wind', '8 km/h', Icons.air),
-                _weatherMetric('Rain', '0 mm', Icons.umbrella),
+                _weatherMetric(TranslationService.translate('humidity') ?? 'Humidity', humidity, Icons.water_drop, context),
+                _weatherMetric(TranslationService.translate('wind') ?? 'Wind', wind, Icons.air, context),
+                _weatherMetric(TranslationService.translate('rainfall') ?? 'Rain', rain, Icons.umbrella, context),
               ],
             ),
           ],
@@ -81,28 +112,29 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _weatherMetric(String label, String value, IconData icon) {
+  Widget _weatherMetric(String label, String value, IconData icon, BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: AppTheme.primaryColor),
+            Icon(icon, size: 16, color: Theme.of(context).primaryColor),
             const SizedBox(width: 4),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+            Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
           ],
         ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54)),
+        Text(label, style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.titleSmall?.color)),
       ],
     );
   }
 
-  Widget _buildScanCard() {
+  Widget _buildScanCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor,
+        color: isDark ? const Color(0xFF1E3A2B) : Theme.of(context).primaryColor,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -156,8 +188,8 @@ class HomeScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Quick Actions',
-            style: TextStyle(
+        Text(TranslationService.translate('quick_actions') ?? 'Quick Actions',
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Color(0xFF2E7D32),
@@ -176,19 +208,21 @@ class HomeScreen extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final item = items[index];
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final baseColor = item['color'] as Color;
+            
             return InkWell(
               onTap: item['onTap'] as void Function()?,
               borderRadius: BorderRadius.circular(20),
-              splashColor: AppTheme.accentColor.withOpacity(0.2),
+              splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      item['color'] as Color,
-                      AppTheme.accentColor.withOpacity(0.7),
-                      AppTheme.backgroundColor,
+                      isDark ? Theme.of(context).colorScheme.surface : baseColor,
+                      isDark ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -196,7 +230,7 @@ class HomeScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: (item['color'] as Color).withOpacity(0.18),
+                      color: isDark ? Colors.black26 : baseColor.withOpacity(0.18),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -210,10 +244,10 @@ class HomeScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white,
+                        color: isDark ? Theme.of(context).scaffoldBackgroundColor : Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.highlightColor.withOpacity(0.18),
+                            color: isDark ? Colors.black26 : Colors.black.withOpacity(0.05),
                             blurRadius: 12,
                             spreadRadius: 2,
                           ),
@@ -221,7 +255,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                       child: Icon(
                         item['icon'] as IconData,
-                        color: AppTheme.primaryColor,
+                        color: Theme.of(context).primaryColor,
                         size: 28,
                       ),
                     ),
@@ -229,10 +263,10 @@ class HomeScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         TranslationService.translate(item['title'] as String),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: Colors.black87,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                           letterSpacing: 0.7,
                         ),
                         maxLines: 2,
@@ -250,6 +284,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildSearchBar(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: () {
         showSearch(context: context, delegate: AppSearchDelegate());
@@ -258,9 +293,9 @@ class HomeScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300, width: 1),
+          border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade300, width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.02),
@@ -271,11 +306,11 @@ class HomeScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.search, color: AppTheme.primaryColor),
+            Icon(Icons.search, color: Theme.of(context).primaryColor),
             const SizedBox(width: 12),
             Text(
               TranslationService.translate('search') ?? 'Search app features...',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+              style: TextStyle(color: Theme.of(context).textTheme.titleSmall?.color, fontSize: 16),
             ),
           ],
         ),
@@ -380,10 +415,10 @@ class AppSearchDelegate extends SearchDelegate {
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(item['icon'] as IconData, color: AppTheme.primaryColor, size: 20),
+            child: Icon(item['icon'] as IconData, color: Theme.of(context).primaryColor, size: 20),
           ),
           title: Text(item['title'] as String, style: const TextStyle(fontWeight: FontWeight.w500)),
           onTap: () {
